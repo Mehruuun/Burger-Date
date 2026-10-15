@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Burger Date 🍔</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    background: #ffc1d9;
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    color: #7a1646;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    touch-action: manipulation;
+  }
+
+  .page {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    padding: 20px;
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+    z-index: 5;
+  }
+  .page.active { display: flex; }
+
+  h1 {
+    font-size: clamp(1.6rem, 6vw, 3rem);
+    line-height: 1.3;
+  }
+
+  .emoji { font-size: clamp(3.5rem, 15vw, 5rem); }
+
+  .buttons {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+    min-height: 70px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 1.3rem;
+    font-weight: 600;
+    padding: 14px 40px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.15s ease, font-size 0.2s ease, padding 0.2s ease;
+  }
+  button:hover { transform: scale(1.04); }
+
+  #yesBtn, #confirmBtn {
+    background: #e6286e;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(230, 40, 110, 0.4);
+  }
+
+  #noBtn {
+    background: #fff;
+    color: #7a1646;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    transition: left 0.25s ease, top 0.25s ease, transform 0.15s ease;
+  }
+
+  input[type="date"], input[type="time"] {
+    font-family: inherit;
+    font-size: 1.2rem;
+    padding: 12px 16px;
+    border: 2px solid #e6286e;
+    border-radius: 14px;
+    background: #fff;
+    color: #7a1646;
+    outline: none;
+    min-width: 0;
+  }
+
+  .row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  #confirmBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  #finalMsg { font-size: clamp(1.4rem, 5.5vw, 2.4rem); }
+
+  #finalDate {
+    font-size: clamp(1rem, 4vw, 1.6rem);
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 10px 22px;
+    border-radius: 16px;
+  }
+
+  /* Countdown */
+  #countdown {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .time-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 10px 6px;
+    min-width: 64px;
+    box-shadow: 0 4px 12px rgba(230, 40, 110, 0.25);
+  }
+  .time-box .num {
+    display: block;
+    font-size: clamp(1.4rem, 6vw, 2rem);
+    font-weight: 800;
+    color: #e6286e;
+  }
+  .time-box .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #countdownDone {
+    display: none;
+    font-size: clamp(1.3rem, 5vw, 2rem);
+    font-weight: 700;
+  }
+
+  /* Music button */
+  #musicBtn {
+    display: none;
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 20;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    font-size: 1.4rem;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Hearts */
+  .heart {
+    position: fixed;
+    top: -50px;
+    user-select: none;
+    pointer-events: none;
+    z-index: 1;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+  @keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(115vh) rotate(360deg); opacity: 1; }
+  }
+
+  /* Small screens */
+  @media (max-width: 480px) {
+    .page { gap: 18px; padding: 16px; }
+    button { font-size: 1.15rem; padding: 12px 30px; }
+    .buttons { gap: 16px; }
+    input[type="date"], input[type="time"] { font-size: 1.05rem; width: 100%; }
+    .time-box { min-width: 58px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background music: put your own file named hotel-california.mp3 next to this page -->
+<audio id="bgm" src="hotel-california.mp3" loop preload="auto"></audio>
+<button id="musicBtn" aria-label="Toggle music">🔊</button>
+
+<!-- Page 1 -->
+<div class="page active" id="page1">
+  <div class="emoji">🍔</div>
+  <h1>Would you like to treat me to a burger, Hana?</h1>
+  <div class="buttons" id="buttons">
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+  </div>
+</div>
+
+<!-- Page 2 -->
+<div class="page" id="page2">
+  <div class="emoji">📅</div>
+  <h1>Yay! When are we going?</h1>
+  <div class="row">
+    <input type="date" id="dateInput">
+    <input type="time" id="timeInput" value="19:00">
+  </div>
+  <button id="confirmBtn" disabled>Confirm</button>
+</div>
+
+<!-- Page 3 -->
+<div class="page" id="page3">
+  <div class="emoji">💖</div>
+  <h1 id="finalMsg">It's a date! See you soon 🍔</h1>
+  <div id="finalDate"></div>
+  <div id="countdown">
+    <div class="time-box"><span class="num" id="cdDays">0</span><span class="label">Days</span></div>
+    <div class="time-box"><span class="num" id="cdHours">0</span><span class="label">Hours</span></div>
+    <div class="time-box"><span class="num" id="cdMins">0</span><span class="label">Min</span></div>
+    <div class="time-box"><span class="num" id="cdSecs">0</span><span class="label">Sec</span></div>
+  </div>
+  <div id="countdownDone">It's burger time! 🍔💖</div>
+</div>
+
+<script>
+  const page1 = document.getElementById('page1');
+  const page2 = document.getElementById('page2');
+  const page3 = document.getElementById('page3');
+  const yesBtn = document.getElementById('yesBtn');
+  const noBtn = document.getElementById('noBtn');
+  const dateInput = document.getElementById('dateInput');
+  const timeInput = document.getElementById('timeInput');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const bgm = document.getElementById('bgm');
+  const musicBtn = document.getElementById('musicBtn');
+
+  function show(page) {
+    [page1, page2, page3].forEach(p => p.classList.remove('active'));
+    page.classList.add('active');
+  }
+
+  /* ---- "No" button runs away + "Yes" button grows ---- */
+  const YES_BASE_FONT = 20.8;   // 1.3rem
+  const YES_BASE_PAD_Y = 14;
+  const YES_BASE_PAD_X = 40;
+  let growStep = 0;
+  let yesMaxed = false;
+
+  function applyYesSize(step) {
+    const s = 1 + step * 0.25;
+    yesBtn.style.fontSize = (YES_BASE_FONT * s) + 'px';
+    yesBtn.style.padding = (YES_BASE_PAD_Y * s) + 'px ' + (YES_BASE_PAD_X * s) + 'px';
+  }
+
+  function growYes() {
+    if (yesMaxed) return;
+    applyYesSize(growStep + 1);
+    const tooWide = yesBtn.offsetWidth > window.innerWidth * 0.9;
+    const tooTall = page1.offsetHeight > window.innerHeight * 0.95;
+    if (tooWide || tooTall) {
+      applyYesSize(growStep);   // go back to the last size that fit
+      yesMaxed = true;
+    } else {
+      growStep++;
+    }
+  }
+
+  function dodge() {
+    noBtn.style.position = 'fixed';
+    const margin = 10;
+    const maxX = window.innerWidth - noBtn.offsetWidth - margin;
+    const maxY = window.innerHeight - noBtn.offsetHeight - margin;
+    noBtn.style.left = Math.max(margin, Math.random() * maxX) + 'px';
+    noBtn.style.top = Math.max(margin, Math.random() * maxY) + 'px';
+    noBtn.style.zIndex = 10;
+  }
+
+  let lastAttempt = 0;
+  function noAttempt(e) {
+    if (e) e.preventDefault();
+    const now = Date.now();
+    if (now - lastAttempt < 350) return;   // avoid counting one attempt twice
+    lastAttempt = now;
+    dodge();
+    growYes();
+  }
+
+  noBtn.addEventListener('mouseenter', noAttempt);
+  noBtn.addEventListener('touchstart', noAttempt, { passive: false });
+  noBtn.addEventListener('click', noAttempt);
+
+  /* ---- Music ---- */
+  function startMusic() {
+    bgm.volume = 0.6;
+    const p = bgm.play();
+    if (p && p.catch) p.catch(() => {});   // ignore if the file is missing or blocked
+    musicBtn.style.display = 'block';
+    musicBtn.textContent = '🔊';
+  }
+
+  musicBtn.addEventListener('click', () => {
+    if (bgm.paused) {
+      bgm.play().catch(() => {});
+      musicBtn.textContent = '🔊';
+    } else {
+      bgm.pause();
+      musicBtn.textContent = '🔇';
+    }
+  });
+
+  /* ---- Yes -> date page ---- */
+  yesBtn.addEventListener('click', () => {
+    noBtn.style.display = 'none';
+    startMusic();
+
+    const toISO = (d) => d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    dateInput.min = toISO(today);      // earliest: today
+    dateInput.max = toISO(tomorrow);   // latest: tomorrow
+    show(page2);
+  });
+
+  dateInput.addEventListener('input', () => {
+    if (dateInput.value && (dateInput.value < dateInput.min || dateInput.value > dateInput.max)) {
+      dateInput.value = '';
+    }
+    confirmBtn.disabled = !dateInput.value;
+  });
+
+  /* ---- Countdown ---- */
+  let countdownTimer = null;
+
+  function startCountdown(target) {
+    const cd = document.getElementById('countdown');
+    const done = document.getElementById('countdownDone');
+
+    function tick() {
+      let diff = target - new Date();
+      if (diff <= 0) {
+        cd.style.display = 'none';
+        done.style.display = 'block';
+        clearInterval(countdownTimer);
+        return;
+      }
+      const days = Math.floor(diff / 86400000); diff %= 86400000;
+      const hours = Math.floor(diff / 3600000); diff %= 3600000;
+      const mins = Math.floor(diff / 60000); diff %= 60000;
+      const secs = Math.floor(diff / 1000);
+      document.getElementById('cdDays').textContent = days;
+      document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('cdMins').textContent = String(mins).padStart(2, '0');
+      document.getElementById('cdSecs').textContent = String(secs).padStart(2, '0');
+    }
+
+    tick();
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(tick, 1000);
+  }
+
+  /* ---- Confirm -> hearts + countdown ---- */
+  confirmBtn.addEventListener('click', () => {
+    if (!dateInput.value) return;
+
+    const d = new Date(dateInput.value + 'T' + (timeInput.value || '19:00'));
+    const text = d.toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    }) + ' at ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    document.getElementById('finalDate').textContent = text;
+    show(page3);
+    startCountdown(d);
+    startHearts();
+  });
+
+  /* ---- Hearts ---- */
+  const heartEmojis = ['❤️', '💖', '💕', '💗', '💘', '💓', '💝'];
+
+  function spawnHeart(initial) {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+    h.style.left = Math.random() * 100 + 'vw';
+    h.style.fontSize = (18 + Math.random() * 40) + 'px';
+    const duration = 4 + Math.random() * 5;
+    h.style.animationDuration = duration + 's';
+    if (initial) h.style.animationDelay = (-Math.random() * duration) + 's';
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), (duration + 1) * 1000);
+  }
+
+  function startHearts() {
+    const isSmall = window.innerWidth < 600;
+    const initialCount = isSmall ? 60 : 120;   // fewer hearts on phones so it stays smooth
+    const perTick = isSmall ? 2 : 4;
+    for (let i = 0; i < initialCount; i++) spawnHeart(true);
+    setInterval(() => {
+      for (let i = 0; i < perTick; i++) spawnHeart(false);
+    }, 200);
+  }
+</script>
+</body>
+</html>
